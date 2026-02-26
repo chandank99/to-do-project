@@ -1,52 +1,50 @@
-import time
-import threading
-from plyer import notification
-from playsound import playsound
-from datetime import datetime
+from flask import Flask, render_template, request, redirect, url_for
+import sqlite3
 
-# Example task list
-tasks = [
-    {"task": "Study DSA", "time": "20:22", "status": "pending"},
-    {"task": "Gym", "time": "16:00", "status": "pending"},
-]
+app = Flask(__name__)
+DATABASE = "todo.db"
 
 
-def check_tasks():
-    while True:
-        now = datetime.now().strftime("%H:%M")
-        for task in tasks:
-            if task['time'] == now and task['status'] == "pending":
-                notify_user(task)
-        time.sleep(60)  # Check every 60 seconds
+def init_db():
+    with sqlite3.connect(DATABASE) as conn:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS tasks (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL,
+                completed INTEGER DEFAULT 0
+            )
+        """)
 
 
-def notify_user(task):
-    # Show notification
-    notification.notify(
-        title=f"Task Reminder: {task['task']}",
-        message="Time's up! Have you completed it?",
-        timeout=10
-    )
-
-    # Play notification sound
-    playsound("alert.mp3")  # You can use any .mp3 or .wav sound
-
-    # Ask user via terminal (you can later do GUI)
-    answer = input(f"\n{task['task']} - Have you completed it? (yes/no/snooze): ").strip().lower()
-    if answer == "yes":
-        task["status"] = "done"
-        print(f"✅ Marked '{task['task']}' as done.")
-    elif answer == "snooze":
-        # You can implement delay logic
-        new_time = (datetime.now() + timedelta(minutes=5)).strftime("%H:%M")
-        task["time"] = new_time
-        print(f"🔁 Snoozed '{task['task']}' for 5 minutes.")
+@app.route("/")
+def index():
+    with sqlite3.connect(DATABASE) as conn:
+        tasks = conn.execute("SELECT * FROM tasks").fetchall()
+    return render_template("index.html", tasks=tasks)
 
 
-# Start background thread
-threading.Thread(target=check_tasks, daemon=True).start()
+@app.route("/add", methods=["POST"])
+def add():
+    title = request.form["title"]
+    with sqlite3.connect(DATABASE) as conn:
+        conn.execute("INSERT INTO tasks (title) VALUES (?)", (title,))
+    return redirect(url_for("index"))
 
-# Simulate main app
-print("⏳ Task scheduler started. Waiting for reminders...\n")
-while True:
-    time.sleep(3600)
+
+@app.route("/complete/<int:task_id>")
+def complete(task_id):
+    with sqlite3.connect(DATABASE) as conn:
+        conn.execute("UPDATE tasks SET completed = 1 WHERE id = ?", (task_id,))
+    return redirect(url_for("index"))
+
+
+@app.route("/delete/<int:task_id>")
+def delete(task_id):
+    with sqlite3.connect(DATABASE) as conn:
+        conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+    return redirect(url_for("index"))
+
+
+if __name__ == "__main__":
+    init_db()
+    app.run(debug=True)
