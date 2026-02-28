@@ -12,7 +12,6 @@ pipeline{
                 git branch: 'main', url: 'https://github.com/chandank99/to-do-project.git'
             }
         }
-        }
         stage("Build the docker image"){
             steps{
                 sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
@@ -38,3 +37,4 @@ pipeline{
         }
     }
 }
+
