@@ -39,7 +39,7 @@ pipeline{
         stage("Deploy and Run"){
             steps{
                 sh "docker stop ${CONTAINER_NAME} || true "
-                sh "docker rm ${CONTAINER_NAME} || true $"
+                sh "docker rm ${CONTAINER_NAME} || true "
                 sh " docker run -d --name ${CONTAINER_NAME} -p 8000:8000 ${U_NAME}/${IMAGE_NAME}:${BUILD_NUMBER}"
         
             }
