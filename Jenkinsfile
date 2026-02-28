@@ -12,14 +12,6 @@ pipeline{
                 git branch: 'main', url: 'https://github.com/chandank99/to-do-project.git'
             }
         }
-        stage("prepare python"){ // To run the code locally.
-            steps{
-                sh '''
-                pyhton3 -m venv venv
-                . venv/bin/activate
-                pip install -r requirements.txt
-                '''
-            }
         }
         stage("Build the docker image"){
             steps{
